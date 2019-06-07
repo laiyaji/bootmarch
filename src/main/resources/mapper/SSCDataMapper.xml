@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="spring.boot.example.bootmarch.dao.SSCDataMapper">
+	<!-- 查询近半个月的历史数据 -->
+
+	<resultMap id="getSSCList"
+		type="spring.boot.example.bootmarch.domain.SSCData">
+		<id property="for_0to_23" column="for_0to23" />
+		<result property="for_24to_120" column="for_24to120" />
+		<result property="create_date" column="create_date" />
+	</resultMap>
+
+	<resultMap id="getSSCHistory"
+		type="spring.boot.example.bootmarch.domain.SSCData">
+		<id property="date_order" column="date_order" />
+		<result property="number" column="number" />
+	</resultMap>
+	<resultMap id="getPK10History"
+		type="spring.boot.example.bootmarch.domain.PK10Data">
+		<id property="pk10_date_order" column="pk10_date_order" />
+		<result property="pk10_number" column="pk10_number" />
+	</resultMap>
+
+
+	<sql id="findSSCWanList">
+		select for_0to23,for_24to120,create_date from ssc_wan order
+		by create_date
+		desc limit 16
+	</sql>
+	<sql id="findSSCGeList">
+		select for_0to23,for_24to120,create_date from ssc_ge order
+		by create_date
+		desc limit 16
+	</sql>
+	<sql id="findSSCQianList">
+		select for_0to23,for_24to120,create_date from ssc_qian order
+		by create_date
+		desc limit 16
+	</sql>
+	<sql id="findSSCBaiList">
+		select for_0to23,for_24to120,create_date from ssc_bai order
+		by create_date
+		desc limit 16
+	</sql>
+	<sql id="findSSCShiList">
+		select for_0to23,for_24to120,create_date from ssc_shi order
+		by create_date
+		desc limit 16
+	</sql>
+
+	<select id="findSSCHistoryList" resultMap="getSSCHistory"
+		parameterType="spring.boot.example.bootmarch.domain.SSCData">
+		select date_order,number from ssc_history_data
+		<if test="date_order != null and date_order != ''">
+			where  <![CDATA[date_order >=CONCAT(#{date_order},'001')  
+			and date_order<=CONCAT(#{date_order},'023')
+			order by date_order
+			]]>
+		</if>
+		<!-- 查询当天 -->
+		<if test="date_order == null or date_order == ''">
+			order by date_order desc
+			limit 23
+		</if>
+
+	</select>
+	
+	<select id="findPK10History" resultMap="getPK10History"
+		parameterType="spring.boot.example.bootmarch.domain.PK10Data">
+		select pk10_date_order,pk10_number from pk_10
+		<if test="pk10_date_order != null and pk10_date_order != ''">
+			where  <![CDATA[pk10_date_order >=CONCAT(#{pk10_date_order},#{start})  
+			and pk10_date_order<=CONCAT(#{pk10_date_order},#{ent})
+			order by pk10_date_order
+			]]>
+		</if>
+		<!-- 查询当天 -->
+		<if test="pk10_date_order == null or pk10_date_order == ''">
+			order by pk10_date_order desc limit 179
+		</if>
+
+	</select>
+
+	<select id="findSSCList" resultMap="getSSCList"
+		parameterType="spring.boot.example.bootmarch.domain.SSCData">
+		<if test="table_name eq 'ssc_wan'">
+			<include refid="findSSCWanList"></include>
+		</if>
+		<if test="table_name eq 'ssc_ge'">
+			<include refid="findSSCGeList"></include>
+		</if>
+		<if test="table_name eq 'ssc_shi'">
+			<include refid="findSSCShiList"></include>
+		</if>
+		<if test="table_name eq 'ssc_bai'">
+			<include refid="findSSCBaiList"></include>
+		</if>
+		<if test="table_name eq 'ssc_qian'">
+			<include refid="findSSCQianList"></include>
+		</if>
+
+	</select>
+
+	<sql id="addSSCWan">
+		INSERT INTO
+		ssc_wan(for_0to23,create_date,create_user,update_date,max_lianxu_buchu)
+		VALUES
+		(#{for_0to_23},#{create_date},'lyy',#{create_date},#{max_lianxu_buchu})
+	</sql>
+	<sql id="addSSCQian">
+		INSERT INTO
+		ssc_qian(for_0to23,create_date,create_user,update_date,max_lianxu_buchu)
+		VALUES
+		(#{for_0to_23},#{create_date},'lyy',#{create_date},#{max_lianxu_buchu})
+	</sql>
+	<sql id="addSSCBai">
+		INSERT INTO
+		ssc_bai(for_0to23,create_date,create_user,update_date,max_lianxu_buchu)
+		VALUES
+		(#{for_0to_23},#{create_date},'lyy',#{create_date},#{max_lianxu_buchu})
+	</sql>
+	<sql id="addSSCShi">
+		INSERT INTO
+		ssc_shi(for_0to23,create_date,create_user,update_date,max_lianxu_buchu)
+		VALUES
+		(#{for_0to_23},#{create_date},'lyy',#{create_date},#{max_lianxu_buchu})
+	</sql>
+	<sql id="addSSCGe">
+		INSERT INTO
+		ssc_ge(for_0to23,create_date,create_user,update_date,max_lianxu_buchu)
+		VALUES
+		(#{for_0to_23},#{create_date},'lyy',#{create_date},#{max_lianxu_buchu})
+	</sql>
+
+	<insert id="addSSCData" parameterType="spring.boot.example.bootmarch.domain.SSCData">
+		<if test="table_name eq 'ssc_wan'">
+			<include refid="addSSCWan"></include>
+		</if>
+		<if test="table_name eq 'ssc_qian'">
+			<include refid="addSSCQian"></include>
+		</if>
+		<if test="table_name eq 'ssc_bai'">
+			<include refid="addSSCBai"></include>
+		</if>
+		<if test="table_name eq 'ssc_shi'">
+			<include refid="addSSCShi"></include>
+		</if>
+		<if test="table_name eq 'ssc_ge'">
+			<include refid="addSSCGe"></include>
+		</if>
+	</insert>
+
+	<insert id="addBatchSSCHistory">
+		INSERT INTO
+		ssc_history_data(date_order,number)
+		VALUES
+		<foreach collection="list" item="ssc" index="index"
+			separator=",">
+			(
+			#{ssc.date_order},#{ssc.number}
+
+			)
+		</foreach>
+
+	</insert>
+
+	<insert id="addPK10Batch">
+		INSERT INTO
+		pk_10(pk10_date_order,pk10_number)
+		VALUES
+		<foreach collection="list" item="ssc" index="index"
+			separator=",">
+			(
+			#{ssc.pk10_date_order},#{ssc.pk10_number}
+
+			)
+		</foreach>
+	</insert>
+</mapper>  

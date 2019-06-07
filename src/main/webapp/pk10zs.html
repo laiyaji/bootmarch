@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html>
+<link href="/ssczs.css" rel="stylesheet" type="text/css">
+<head>
+<meta charset="UTF-8">
+<title>pk10统计分析图</title>
+<link href="/common.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="/jquery.min.js"></script>
+<script type="text/javascript" src="/json2.js"></script>
+</head>
+<body>
+
+	<div id="trendChartPapre" class="caipiaoZoushiTable">
+		<span style="color: gray;">查询时间:</span>
+		<input id="pk10_date_order" type="text" style="width: 200px;"><span>(格式如:20180703)</span>
+			<span style="color: gray;">期号:</span>
+			<input id="start" type="text" style="width: 100px;"/>
+			<span style="color: gray;">~</span>
+			<input id="ent" type="text" style="width: 100px;"/>
+			<span>(格式如:001~030)</span>&nbsp;&nbsp;
+			<input type="button" value="走势查询" id="search">
+			<br/>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="冠军" checked="checked"><span>冠军</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="亚军"><span>亚军</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="第三名"><span>第三名</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="第四名"><span>第四名</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="第五名"><span>第五名</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="第六名"><span>第六名</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="第七名"><span>第七名</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="第八名"><span>第八名</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="第九名"><span>第九名</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="第十名"><span>第十名</span>
+		<div id="basicTrendDingWeiGeDIV" class="basicTrendChartDIV">
+			<table id="table_style" class="table-style">
+				<thead>
+					<tr>
+						<td rowspan="2" class="w80 line-gao title_1" ><span>期号</span></td>
+						<td rowspan="2" class="w57 line-gao title_1" ><span>奖号</span></td>
+						<td colspan="10" class="title_1" id="weiType">冠军</td>
+						<td colspan="6" class="title_1" id="weiTypeFb">冠军形态分布</td>
+					</tr>
+					<tr>
+						
+						<td class="title_1" >1</td>
+						<td class="title_1" >2</td>
+						<td class="title_1" >3</td>
+						<td class="title_1" >4</td>
+						<td class="title_1" >5</td>
+						<td class="title_1" >6</td>
+						<td class="title_1" >7</td>
+						<td class="title_1" >8</td>
+						<td class="title_1" >9</td>
+						<td class="title_1" >10</td>
+						<td class="title_1" >大</td>
+						<td class="title_1" >小</td>
+						<td class="title_1" >奇</td>
+						<td class="title_1" >偶</td>
+						<td class="title_1" >质</td>
+						<td class="title_1" >合</td>
+
+					</tr>
+				</thead>
+				<tbody class="trendChart" id="trendChart">
+
+				</tbody>
+
+			</table>
+			
+		</div>
+
+
+	</div>
+	<script type="text/javascript">
+	function myTrim(x) {
+	    return x.replace(/^\s+|\s+$/gm,'');
+	}
+
+	
+		function StringBuilder() {
+			this._str_ = new Array();
+		}
+		StringBuilder.prototype.append = function(a) {
+			this._str_.push(a);
+		}
+		StringBuilder.prototype.toString = function() {
+			return this._str_.join("");
+		}
+
+		$(function() {
+			$("#pk10_date_order").keydown(function (event) {//当按下按键时  
+			    if (event.which == 13) {//.which属性判断按下的是哪个键，回车键的键位序号为13  
+			    	var radioV=$("input[name='weizhi']:checked").val();
+					getInitData(radioV);
+			    }  
+			});  
+
+			// 位置选中事件
+			$("input[name='weizhi']").click(function(){
+				var radioV=$(this).val();
+				getInitData(radioV);
+			});
+			
+			// 初始化数据
+			getInitData("冠军");
+			
+			//查询
+			$("#search").click(function() {
+				var radioV=$("input[name='weizhi']:checked").val();
+				
+				getInitData(radioV);
+			});
+
+		});
+		
+		// 初始数据方法
+		function getInitData(radioVal) {
+			// 单选按钮
+			forRadioValue();
+			$("#trendChart").empty();
+			var pk10_date_order = $("#pk10_date_order").val();
+			var start = $("#start").val();
+			var ent = $("#ent").val();
+			if(myTrim(start)==''){
+				start='001';
+			}
+			if(myTrim(ent)==''){
+				ent='179';
+			}
+			$.post("http://localhost:8080/findPK10History", {
+				"pk10_date_order" : pk10_date_order,"start":start,"ent":ent
+			}, function(result) {
+				var buffer = new StringBuilder();
+				var size=0;
+				buffer.append("<tr>");
+				$.each(result, function(n, value) {
+					size=n;
+					buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["pk10_date_order"]+ "</td>");
+					if(radioVal=="冠军"){
+						
+						
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'><span style='color: red;'>" + value["one"]+"</span>"+","+ value["two"]+"," + value["three"]+"," + value["four"]+","+value["five"]+","+value["six"]+","+value["seven"]+","+value["eight"]+","+value["nine"]+","+value["ten"]+"</td>");
+						
+						if (value["one"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["one"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["one"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["one"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["one"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["one"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["one"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["one"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["one"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["one"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["one"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["one"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["one"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["one"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["one"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["one"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["one"] == '9') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["one"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["one"] + "</td>");
+						}
+
+						// 是第五名数字大小对应的td
+						if (value["one_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["one_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["one_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["one_bigSmall"]
+									+ "</td>");
+						}
+						if (value["one_jiOu"] == '奇') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["one_jiOu"]
+									+ "</td><td style='background-color:rgb(237,255,236)'></td>");
+						}
+						if (value["one_jiOu"] == '偶') {
+							buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["one_jiOu"]
+									+ "</td>");
+						}
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}
+					else if(radioVal=="亚军"){
+						
+						
+						// 期号
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["one"]+","+"<span style='color: red;'>"+value["two"]+"</span>"+"," + value["three"]+"," + value["four"]+","+value["five"]+","+value["six"]+","+value["seven"]+","+value["eight"]+","+value["nine"]+","+value["ten"]+"</td>");
+						if (value["two"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["two"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["two"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["two"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["two"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["two"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["two"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["two"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["two"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["two"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["two"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["two"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["two"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["two"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["two"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["two"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["two"] == '9') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["two"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["two"] + "</td>");
+						}
+
+						// 是第五名数字大小对应的td
+						if (value["two_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["two_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["two_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["two_bigSmall"]
+									+ "</td>");
+						}
+						if (value["two_jiOu"] == '奇') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["two_jiOu"]
+									+ "</td><td style='background-color:rgb(237,255,236)'></td>");
+						}
+						if (value["two_jiOu"] == '偶') {
+							buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["two_jiOu"]
+									+ "</td>");
+						}
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+					}
+					else if(radioVal=="第三名"){
+						// 期号
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["one"]+","+ value["two"] +","+"<span style='color: red;'>"+ value["three"]+"</span>"+"," + value["four"]+","+value["five"]+","+value["six"]+","+value["seven"]+","+value["eight"]+","+value["nine"]+","+value["ten"]+"</td>");
+						if (value["three"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["three"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["three"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["three"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["three"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["three"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["three"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["three"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["three"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["three"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["three"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["three"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["three"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["three"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["three"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["three"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["three"] == '9') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["three"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["three"] + "</td>");
+						}
+
+						// 是第五名数字大小对应的td
+						if (value["three_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["three_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["three_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["three_bigSmall"]
+									+ "</td>");
+						}
+						if (value["three_jiOu"] == '奇') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["three_jiOu"]
+									+ "</td><td style='background-color:rgb(237,255,236)'></td>");
+						}
+						if (value["three_jiOu"] == '偶') {
+							buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["three_jiOu"]
+									+ "</td>");
+						}
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}
+					else if(radioVal=="第四名"){
+						// 期号
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["one"]+","+ value["two"]+"," + value["three"]+"," + "<span style='color: red;'>"+value["four"]+"</span>"+","+value["five"]+","+value["six"]+","+value["seven"]+","+value["eight"]+","+value["nine"]+","+value["ten"]+"</td>");
+						if (value["four"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["four"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["four"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["four"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["four"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["four"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["four"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["four"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["four"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["four"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["four"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["four"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["four"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["four"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["four"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["four"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["four"] == '9') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["four"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["four"] + "</td>");
+						}
+
+						// 是第五名数字大小对应的td
+						if (value["four_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["four_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["four_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["four_bigSmall"]
+									+ "</td>");
+						}
+						if (value["four_jiOu"] == '奇') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["four_jiOu"]
+									+ "</td><td style='background-color:rgb(237,255,236)'></td>");
+						}
+						if (value["four_jiOu"] == '偶') {
+							buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["four_jiOu"]
+									+ "</td>");
+						}
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}else if(radioVal=="第五名"){
+						// 期号
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["one"]+","+ value["two"] +","+ value["three"]+"," + value["four"]+","+"<span style='color: red;'>"+value["five"]+"</span>"+","+value["six"]+","+value["seven"]+","+value["eight"]+","+value["nine"]+","+value["ten"]+"</td>");
+						if (value["five"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["five"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["five"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["five"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["five"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["five"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["five"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["five"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["five"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["five"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["five"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["five"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["five"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["five"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["five"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["five"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["five"] == '9') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["five"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["five"] + "</td>");
+						}
+
+						// 是第五名数字大小对应的td
+						if (value["five_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["five_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["five_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["five_bigSmall"]
+									+ "</td>");
+						}
+						if (value["five_jiOu"] == '奇') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["five_jiOu"]
+									+ "</td><td style='background-color:rgb(237,255,236)'></td>");
+						}
+						if (value["five_jiOu"] == '偶') {
+							buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["five_jiOu"]
+									+ "</td>");
+						}
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}else if(radioVal=="第六名"){
+						// 期号
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["one"]+","+ value["two"]+"," + value["three"]+"," + value["four"]+","+value["five"]+","+"<span style='color: red;'>"+value["six"]+"</span>"+","+value["seven"]+","+value["eight"]+","+value["nine"]+","+value["ten"]+"</td>");
+						if (value["six"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["six"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["six"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["six"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["six"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["six"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["six"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["six"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["six"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["six"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["six"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["six"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["six"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["six"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["six"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["six"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["six"] == '9') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["six"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["six"] + "</td>");
+						}
+
+						// 是第五名数字大小对应的td
+						if (value["six_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["six_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["six_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["six_bigSmall"]
+									+ "</td>");
+						}
+						if (value["six_jiOu"] == '奇') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["six_jiOu"]
+									+ "</td><td style='background-color:rgb(237,255,236)'></td>");
+						}
+						if (value["six_jiOu"] == '偶') {
+							buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["six_jiOu"]
+									+ "</td>");
+						}
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}else if(radioVal=="第七名"){
+						// 期号
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["one"]+","+ value["two"] +","+ value["three"]+"," + value["four"]+","+value["five"]+","+value["six"]+","+"<span style='color: red;'>"+value["seven"]+"</span>"+","+value["eight"]+","+value["nine"]+","+value["ten"]+"</td>");
+						if (value["seven"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["seven"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["seven"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["seven"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["seven"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["seven"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["seven"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["seven"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["seven"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["seven"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["seven"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["seven"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["seven"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["seven"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["seven"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["seven"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["seven"] == '9') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["seven"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["seven"] + "</td>");
+						}
+
+						// 是第五名数字大小对应的td
+						if (value["seven_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["seven_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["seven_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["seven_bigSmall"]
+									+ "</td>");
+						}
+						if (value["seven_jiOu"] == '奇') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["seven_jiOu"]
+									+ "</td><td style='background-color:rgb(237,255,236)'></td>");
+						}
+						if (value["seven_jiOu"] == '偶') {
+							buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["seven_jiOu"]
+									+ "</td>");
+						}
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}else if(radioVal=="第八名"){
+						// 期号
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["one"]+","+ value["two"]+"," + value["three"]+"," + value["four"]+","+value["five"]+","+value["six"]+","+value["seven"]+","+"<span style='color: red;'>"+value["eight"]+"</span>"+","+value["nine"]+","+value["ten"]+"</td>");
+						if (value["eight"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["eight"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["eight"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["eight"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["eight"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["eight"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["eight"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["eight"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["eight"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["eight"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["eight"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["eight"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["eight"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["eight"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["eight"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["eight"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["eight"] == '9') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["eight"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["five"] + "</td>");
+						}
+
+						// 是第五名数字大小对应的td
+						if (value["eight_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["eight_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["eight_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["eight_bigSmall"]
+									+ "</td>");
+						}
+						if (value["eight_jiOu"] == '奇') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["eight_jiOu"]
+									+ "</td><td style='background-color:rgb(237,255,236)'></td>");
+						}
+						if (value["eight_jiOu"] == '偶') {
+							buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["eight_jiOu"]
+									+ "</td>");
+						}
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}
+					else if(radioVal=="第九名"){
+						// 期号
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["one"]+","+ value["two"] +","+ value["three"]+"," + value["four"]+","+value["five"]+","+value["six"]+","+value["seven"]+","+value["eight"]+","+"<span style='color: red;'>"+value["nine"]+"</span>"+","+value["ten"]+"</td>");
+						if (value["nine"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["nine"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["nine"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["nine"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["nine"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["nine"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["nine"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["nine"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["nine"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["nine"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["nine"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["nine"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["nine"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["nine"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["nine"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["nine"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["nine"] == '9') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["nine"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["nine"] + "</td>");
+						}
+
+						// 是第五名数字大小对应的td
+						if (value["nine_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["nine_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["nine_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["nine_bigSmall"]
+									+ "</td>");
+						}
+						if (value["nine_jiOu"] == '奇') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["nine_jiOu"]
+									+ "</td><td style='background-color:rgb(237,255,236)'></td>");
+						}
+						if (value["nine_jiOu"] == '偶') {
+							buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["nine_jiOu"]
+									+ "</td>");
+						}
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}else if(radioVal=="第十名"){
+						// 期号
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["one"]+","+ value["two"] +","+ value["three"]+"," + value["four"]+","+value["five"]+","+value["six"]+","+value["seven"]+","+value["eight"]+","+value["nine"]+","+"<span style='color: red;'>"+value["ten"]+"</span></td>");
+						if (value["ten"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["ten"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["ten"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["ten"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["ten"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["ten"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["ten"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["ten"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["ten"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["ten"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["ten"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["ten"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["ten"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["ten"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["ten"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["ten"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["ten"] == '9') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["ten"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'>" + value["ten"] + "</td>");
+						}
+
+						// 是第五名数字大小对应的td
+						if (value["ten_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["ten_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["ten_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["ten_bigSmall"]
+									+ "</td>");
+						}
+						if (value["ten_jiOu"] == '奇') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["ten_jiOu"]
+									+ "</td><td style='background-color:rgb(237,255,236)'></td>");
+						}
+						if (value["ten_jiOu"] == '偶') {
+							buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -2px;background-color:rgb(237,255,236);color:#fff'>" + value["ten_jiOu"]
+									+ "</td>");
+						}
+						
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}
+					
+					
+				});
+				
+				var guawan=result[size]["gone"];
+				var gzwan=result[size]["zone"];
+				
+				var guaqian=result[size]["gtwo"];
+				var gzqian=result[size]["ztwo"];
+				
+				var guabai=result[size]["gthree"];
+				var gzbai=result[size]["zthree"];
+				
+				var guashi=result[size]["gfour"];
+				var gzshi=result[size]["zfour"];
+				
+				var guage=result[size]["gfive"];
+				var gzge=result[size]["zfive"];
+				
+				var g6=result[size]["gsix"];
+				var z6=result[size]["zsix"];
+				
+				var g7=result[size]["gseven"];
+				var z7=result[size]["zseven"];
+				
+				var g8=result[size]["geight"];
+				var z8=result[size]["zeight"];
+				
+				var g9=result[size]["gnine"];
+				var z9=result[size]["znine"];
+				
+				var g10=result[size]["gten"];
+				var z10=result[size]["zten"];
+				
+				var dateTime=result[size]["pk10_date_order"].substr(0,8);
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号第一名最大连挂<span style='color:#cc0000;'><strong>"+guawan+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号第一名累计共中<span style='color:#1e88ee;'>"+gzwan+"</span>期</td>");
+				buffer.append("<td colspan='4'><input type='button' name='冠军' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号第二名最大连挂<span style='color:#cc0000;'><strong>"+guaqian+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号第二名累计共中<span style='color:#1e88ee;'>"+gzqian+"</span>期</td>");
+				buffer.append("<td colspan='4'><input type='button' name='亚军' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号第三名最大连挂<span style='color:#cc0000;'><strong>"+guabai+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号第三名累计共中<span style='color:#1e88ee;'>"+gzbai+"</span>期</td>");
+				buffer.append("<td colspan='4'><input type='button' name='第三名' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号第四名最大连挂<span style='color:#cc0000;'><strong>"+guashi+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号第四名累计共中<span style='color:#1e88ee;'>"+gzshi+"</span>期</td>");
+				buffer.append("<td colspan='4'><input type='button' name='第四名' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号第五名最大连挂<span style='color:#cc0000;'><strong>"+guage+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号第五名累计共中<span style='color:#1e88ee;'>"+gzge+"</span>期</td>");
+				buffer.append("<td  colspan='4'><input type='button' name='第五名' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号第六名最大连挂<span style='color:#cc0000;'><strong>"+g6+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号第六名累计共中<span style='color:#1e88ee;'>"+z6+"</span>期</td>");
+				buffer.append("<td  colspan='4'><input type='button' name='第五名' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号第七名最大连挂<span style='color:#cc0000;'><strong>"+g7+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号第七名累计共中<span style='color:#1e88ee;'>"+z7+"</span>期</td>");
+				buffer.append("<td  colspan='4'><input type='button' name='第五名' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号第八名最大连挂<span style='color:#cc0000;'><strong>"+g8+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号第八名累计共中<span style='color:#1e88ee;'>"+z8+"</span>期</td>");
+				buffer.append("<td  colspan='4'><input type='button' name='第五名' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号第九名最大连挂<span style='color:#cc0000;'><strong>"+g9+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号第九名累计共中<span style='color:#1e88ee;'>"+z9+"</span>期</td>");
+				buffer.append("<td  colspan='4'><input type='button' name='第五名' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号第十名最大连挂<span style='color:#cc0000;'><strong>"+g10+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号第十名累计共中<span style='color:#1e88ee;'>"+z10+"</span>期</td>");
+				buffer.append("<td  colspan='4'><input type='button' name='第五名' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				
+				$("#trendChart").append(buffer.toString());
+				
+				
+				
+						
+			});
+		}
+		
+		function forRadioValue(){
+			// 选中事件
+			$("input[name='weizhi']").click(function(){
+				var radioV=$(this).val();
+				var str="形态分布";
+				$("#weiType").text(radioV);
+				$("#weiTypeFb").text(radioV+str);
+			});
+			
+		}
+	</script>
+</body>
+</html>

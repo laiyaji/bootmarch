@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<link href="/ssczs.css" rel="stylesheet" type="text/css">
+<head>
+<meta charset="UTF-8">
+<title>时时彩统计分析图</title>
+<link href="/common.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="/jquery.min.js"></script>
+<script type="text/javascript" src="/json2.js"></script>
+</head>
+<body>
+
+	<div id="trendChartPapre" class="caipiaoZoushiTable">
+		<span style="color: gray;">查询时间:</span><input id="date_order"
+			type="text" style="width: 200px;"><span>(格式如:20180809)</span>&nbsp;&nbsp;<input
+			type="button" value="走势查询" id="search">
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="万位"><span>万位</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="千位"><span>千位</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="百位"><span>百位</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="十位"><span>十位</span>
+			&nbsp;&nbsp;<input type="radio" name="weizhi" value="个位" checked="checked"><span>个位</span>
+		<div id="basicTrendDingWeiGeDIV" class="basicTrendChartDIV">
+			<table id="table_style" class="table-style">
+				<thead>
+					<tr>
+						<td rowspan="2" class="w80 line-gao title_1" ><span>期号</span></td>
+						<td rowspan="2" class="w57 line-gao title_1" ><span>奖号</span></td>
+						<td colspan="10" class="title_1" id="weiType">个位</td>
+						<td colspan="6" class="title_1" id="weiTypeFb">个位形态分布</td>
+					</tr>
+					<tr>
+						<td class="title_1" >0</td>
+						<td class="title_1" >1</td>
+						<td class="title_1" >2</td>
+						<td class="title_1" >3</td>
+						<td class="title_1" >4</td>
+						<td class="title_1" >5</td>
+						<td class="title_1" >6</td>
+						<td class="title_1" >7</td>
+						<td class="title_1" >8</td>
+						<td class="title_1" >9</td>
+						<td class="title_1" >大</td>
+						<td class="title_1" >小</td>
+						<td class="title_1" >奇</td>
+						<td class="title_1" >偶</td>
+						<td class="title_1" >质</td>
+						<td class="title_1" >合</td>
+
+					</tr>
+				</thead>
+				<tbody class="trendChart" id="trendChart">
+
+				</tbody>
+
+			</table>
+			
+		</div>
+
+
+	</div>
+	<script type="text/javascript">
+		function StringBuilder() {
+			this._str_ = new Array();
+		}
+		StringBuilder.prototype.append = function(a) {
+			this._str_.push(a);
+		}
+		StringBuilder.prototype.toString = function() {
+			return this._str_.join("");
+		}
+
+		$(function() {
+			$("#date_order").keydown(function (event) {//当按下按键时  
+			    if (event.which == 13) {//.which属性判断按下的是哪个键，回车键的键位序号为13  
+			    	var radioV=$("input[name='weizhi']:checked").val();
+					getInitData(radioV);
+			    }  
+			});  
+
+			// 新增数据入库
+			// 位置选中事件
+			$("#trendChart").on("click",".newAddData",function(){
+				var nameValue=$(this).attr("name");
+				var for_0to_23=$(this).parent().prev().find("span").html();
+				var max_lianxu_buchu=$(this).parent().prev().prev().find("span strong").html();
+				var date_str=$(this).parent().prev().html().substring(0,8);
+				var create_date=date_str.substring(4,6)+"-"+date_str.substring(6);
+				var json={"for_0to_23":for_0to_23,"max_lianxu_buchu":max_lianxu_buchu,"create_date":create_date};
+				if(nameValue=='万位'){
+					json["table_name"]="ssc_wan";
+				}
+				if(nameValue=='千位'){
+					json["table_name"]="ssc_qian";
+				}
+				if(nameValue=='百位'){
+					json["table_name"]="ssc_bai";
+				}
+				if(nameValue=='十位'){
+					json["table_name"]="ssc_shi";
+				}
+				if(nameValue=='个位'){
+					json["table_name"]="ssc_ge";
+				}
+				// JSON.stringify(json)
+				$.post("http://localhost:8080/addSscData", {
+					"jsonString" : JSON.stringify(json)
+				}, function(result) {
+					if('Y'==result){
+						alert(nameValue+"新增成功");
+					}
+					
+				});
+			});
+			// 位置选中事件
+			$("input[name='weizhi']").click(function(){
+				var radioV=$(this).val();
+				getInitData(radioV);
+			});
+			
+			// 初始化数据
+			getInitData("个位");
+			
+			//查询
+			$("#search").click(function() {
+				var radioV=$("input[name='weizhi']:checked").val();
+				getInitData(radioV);
+			});
+
+		});
+		
+		// 初始数据方法
+		function getInitData(radioVal) {
+			// 单选按钮
+			forRadioValue();
+			$("#trendChart").empty();
+			var date_order = $("#date_order").val();
+			$.post("http://localhost:8080/findSSCHistoryList", {
+				"date_order" : date_order
+			}, function(result) {
+				var buffer = new StringBuilder();
+				buffer.append("<tr>");
+				$.each(result, function(n, value) {
+					if(radioVal=="个位"){
+						
+						// 期号
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["date_order"]+ "</td>");
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["wan"]+ value["qian"] + value["bai"] + value["shi"]+"<span style='color: red;'>" + value["ge"]+ "</span></td>");
+						
+						if (value["ge"] == '0') {
+							buffer.append("<td  style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["ge"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["ge"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["ge"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["ge"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["ge"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["ge"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["ge"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["ge"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["ge"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["ge"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["ge"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["ge"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["ge"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["ge"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["ge"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["ge"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["ge"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["ge"] + "</td>");
+						}
+
+						// 是个位数字大小对应的td
+						if (value["ge_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["ge_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["ge_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["ge_bigSmall"]
+									+ "</td>");
+						}
+						// 奇-偶
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}
+					else if(radioVal=="十位"){
+						
+						
+						// 期号
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["date_order"]+ "</td>");
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["wan"]+ value["qian"] + value["bai"] +"<span style='color: red;'>"+ value["shi"]+"</span>"+ value["ge"]);
+						if (value["shi"] == '0') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["shi"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["shi"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["shi"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["shi"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["shi"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["shi"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["shi"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["shi"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["shi"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["shi"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["shi"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["shi"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["shi"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["shi"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["shi"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["shi"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["shi"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["shi"] + "</td>");
+						}
+
+						// 是个位数字大小对应的td
+						if (value["shi_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["shi_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["shi_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["shi_bigSmall"]
+									+ "</td>");
+						}
+						// 奇-偶
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+					}
+					else if(radioVal=="百位"){
+						// 期号
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["date_order"]+ "</td>");
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["wan"]+ value["qian"]  +"<span style='color: red;'>"+ value["bai"]+"</span>"+ value["shi"]+ value["ge"]);
+						if (value["bai"] == '0') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["bai"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["bai"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["bai"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["bai"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["bai"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["bai"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["bai"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["bai"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["bai"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["bai"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["bai"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["bai"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["bai"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["bai"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["bai"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["bai"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["bai"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["bai"] + "</td>");
+						}
+
+						// 是个位数字大小对应的td
+						if (value["bai_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["bai_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["bai_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["bai_bigSmall"]
+									+ "</td>");
+						}
+						// 奇-偶
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}
+					else if(radioVal=="千位"){
+						// 期号
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["date_order"]+ "</td>");
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["wan"] +"<span style='color: red;'>"+ value["qian"] +"</span>"+ value["bai"]+ value["shi"]+ value["ge"]);
+						if (value["qian"] == '0') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["qian"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["qian"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["qian"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["qian"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["qian"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["qian"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["qian"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["qian"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["qian"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["qian"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["qian"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["qian"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["qian"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["qian"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["qian"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["qian"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["qian"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["qian"] + "</td>");
+						}
+
+						// 是个位数字大小对应的td
+						if (value["qian_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["qian_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["qian_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["qian_bigSmall"]
+									+ "</td>");
+						}
+						// 奇-偶
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}else{
+						// 期号
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" + value["date_order"]+ "</td>");
+						// 奖号:万，千，百，十
+						buffer.append("<td class='color1' style='background-color:rgb(240,239,239)'>" +"<span style='color: red;'>"+  value["wan"] +"</span>"+value["qian"] + value["bai"]+ value["shi"]+ value["ge"]);
+						if (value["wan"] == '0') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["wan"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+						} else if (value["wan"] == '1') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["wan"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["wan"] == '2') {
+							buffer.append("<td style='background-color:rgb(254,243,235);'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["wan"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["wan"] == '3') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["wan"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+
+						} else if (value["wan"] == '4') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["wan"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["wan"] == '5') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["wan"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["wan"] == '6') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["wan"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							
+
+						} else if (value["wan"] == '7') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td><td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["wan"] + "</td>");
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+
+						} else if (value["wan"] == '8') {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["wan"] + "</td><td style='background-color:rgb(254,243,235)'></td>");
+						} else {
+							buffer.append("<td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td> <td style='background-color:rgb(254,243,235)'></td>");
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -104px;background-color:rgb(254,243,235);color:#fff'>" + value["wan"] + "</td>");
+						}
+
+						// 是个位数字大小对应的td
+						if (value["wan_bigSmall"] == '大') {
+							buffer.append("<td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["wan_bigSmall"]
+									+ "</td><td style='background-color:rgb(243,250,255)'></td>");
+						}
+						if (value["wan_bigSmall"] == '小') {
+							buffer.append("<td style='background-color:rgb(243,250,255)'></td><td style='background: url(/ssc.png) no-repeat;background-position:center -383px;background-color:rgb(243,250,255);color:#fff'>" + value["wan_bigSmall"]
+									+ "</td>");
+						}
+						// 奇-偶
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						// 质-合
+						buffer.append("<td style='background-color:rgb(237,255,236)'></td><td style='background-color:rgb(237,255,236)'></td>");
+						buffer.append("</tr>");
+						
+					}
+					
+					
+				});
+				
+				var guawan=result[22]["guawan"];
+				var gzwan=result[22]["gzwan"];
+				
+				var guaqian=result[22]["guaqian"];
+				var gzqian=result[22]["gzqian"];
+				
+				var guabai=result[22]["guabai"];
+				var gzbai=result[22]["gzbai"];
+				
+				var guashi=result[22]["guashi"];
+				var gzshi=result[22]["gzshi"];
+				
+				var guage=result[22]["guage"];
+				var gzge=result[22]["gzge"];
+				
+				var dateTime=result[22]["date_order"].substr(0,8);
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号万位最大连挂<span style='color:#cc0000;'><strong>"+guawan+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号万位累计共中<span style='color:#1e88ee;'>"+gzwan+"</span>期</td>");
+				buffer.append("<td colspan='4'><input type='button' name='万位' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号千位最大连挂<span style='color:#cc0000;'><strong>"+guaqian+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号千位累计共中<span style='color:#1e88ee;'>"+gzqian+"</span>期</td>");
+				buffer.append("<td colspan='4'><input type='button' name='千位' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号百位最大连挂<span style='color:#cc0000;'><strong>"+guabai+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号百位累计共中<span style='color:#1e88ee;'>"+gzbai+"</span>期</td>");
+				buffer.append("<td colspan='4'><input type='button' name='百位' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号十位最大连挂<span style='color:#cc0000;'><strong>"+guashi+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号十位累计共中<span style='color:#1e88ee;'>"+gzshi+"</span>期</td>");
+				buffer.append("<td colspan='4'><input type='button' name='十位' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				
+				buffer.append("<tr>");
+				buffer.append("<td  colspan='6' class='title_1'>"+dateTime+"号个位最大连挂<span style='color:#cc0000;'><strong>"+guage+"</strong></span>期</td>");
+				buffer.append("<td  colspan='8' class='title_1'>"+dateTime+"号个位累计共中<span style='color:#1e88ee;'>"+gzge+"</span>期</td>");
+				buffer.append("<td  colspan='4'><input type='button' name='个位' value='数据入库' class='newAddData'></td>");
+				buffer.append("</tr>");
+				
+				
+				
+				$("#trendChart").append(buffer.toString());
+				
+				
+				
+						
+			});
+		}
+		
+		function forRadioValue(){
+			// 选中事件
+			$("input[name='weizhi']").click(function(){
+				var radioV=$(this).val();
+				var str="形态分布";
+				if(radioV=='个位'){
+					$("#weiType").text(radioV);
+					$("#weiTypeFb").text(radioV+str);
+				}
+				else if(radioV=='十位'){
+					$("#weiType").text(radioV);
+					$("#weiTypeFb").text(radioV+str);
+				}
+				else if(radioV=='百位'){
+					$("#weiType").text(radioV);
+					$("#weiTypeFb").text(radioV+str);
+				}
+				else if(radioV=='千位'){
+					$("#weiType").text(radioV);
+					$("#weiTypeFb").text(radioV+str);
+				}
+				else{
+					$("#weiType").text(radioV);
+					$("#weiTypeFb").text(radioV+str);
+				}
+			});
+			
+		}
+	</script>
+</body>
+</html>

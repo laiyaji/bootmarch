@@ -1,0 +1,185 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>时时彩折线图</title>
+<script type="text/javascript" src="/jquery.min.js"></script>
+<script type="text/javascript" src="/echarts.common.min.js"></script>
+</head>
+<body>
+	<div id="line" style="width: 95%; height: 80%;"></div>
+	<div>
+		<input id="ssc_wan23" type="button" value="万位查询(0-23期)"> 
+		<input id="ssc_qian23" type="button" value="千位查询(0-23期)"> 
+		<input id="ssc_bai23" type="button" value="百位查询(0-23期)"> 
+		<input id="ssc_shi23" type="button" value="十位查询(0-23期)"> 
+		<input id="ssc_ge23" type="button" value="个位查询(0-23期)"> 
+		
+	</div>
+
+	<script type="text/javascript">
+		myChart = echarts.init(document.getElementById('line'));
+		myChart.setOption({
+
+			title : {
+				text : '15天折线图'
+			},
+			tooltip : {
+				trigger : 'axis'
+			},
+			legend : {
+				data : [ '1-23期', '24-120期' ]
+			},
+			grid : {
+				left : '3%',
+				right : '3%',
+				bottom : '3%',
+				containLabel : true
+			},
+			toolbox : {
+				feature : {
+					saveAsImage : {}
+				}
+			},
+			xAxis : {
+				type : 'category',
+				boundaryGap : false,
+				data : []
+			},
+			yAxis : {
+				type : 'value'
+			},
+			series : [ {
+				name : '1-23期',
+				type : 'line',
+				data : []
+			}, {
+				name : '24-120期',
+				type : 'line',
+				data : []
+			} ]
+		});
+		$(function() {
+			// 初始化数据
+			 initData();
+			// 以下是点击每个位置的查询事件
+			$("#ssc_wan23").click(function() {
+				$.post("http://localhost:8080/findSSCList",{"table_name":"ssc_wan"}, function(data) {
+					myChart.setOption({
+						xAxis : {
+							data : data.timeList
+						},
+						series : [ {
+							// 根据名字对应到相应的系列
+							name : '万位1-23期',
+							data : data.value23List
+						},{
+							// 根据名字对应到相应的系列
+							name : '万位24-120期',
+							data : []
+						} ]
+					});
+				});
+			});
+		
+			
+			// 各位
+			$("#ssc_ge23").click(function() {
+				$.post("http://localhost:8080/findSSCList",{"table_name":"ssc_ge"}, function(data) {
+					myChart.setOption({
+						xAxis : {
+							data : data.timeList
+						},
+						series : [ {
+							// 根据名字对应到相应的系列
+							name : '个位1-23期',
+							data : data.value23List
+						},{
+							// 根据名字对应到相应的系列
+							name : '个位24-120期',
+							data : []
+						} ]
+					});
+				});
+			});
+			// 各位
+			$("#ssc_shi23").click(function() {
+				$.post("http://localhost:8080/findSSCList",{"table_name":"ssc_shi"}, function(data) {
+					myChart.setOption({
+						xAxis : {
+							data : data.timeList
+						},
+						series : [ {
+							// 根据名字对应到相应的系列
+							name : '十位1-23期',
+							data : data.value23List
+						},{
+							// 根据名字对应到相应的系列
+							name : '十位24-120期',
+							data : []
+						} ]
+					});
+				});
+			});
+			// 各位
+			$("#ssc_bai23").click(function() {
+				$.post("http://localhost:8080/findSSCList",{"table_name":"ssc_bai"}, function(data) {
+					myChart.setOption({
+						xAxis : {
+							data : data.timeList
+						},
+						series : [ {
+							// 根据名字对应到相应的系列
+							name : '百位1-23期',
+							data : data.value23List
+						},{
+							// 根据名字对应到相应的系列
+							name : '百位24-120期',
+							data : []
+						} ]
+					});
+				});
+			});
+			// 各位
+			$("#ssc_qian23").click(function() {
+				$.post("http://localhost:8080/findSSCList",{"table_name":"ssc_qian"}, function(data) {
+					myChart.setOption({
+						xAxis : {
+							data : data.timeList
+						},
+						series : [ {
+							// 根据名字对应到相应的系列
+							name : '千位1-23期',
+							data : data.value23List
+						},{
+							// 根据名字对应到相应的系列
+							name : '千位24-120期',
+							data : []
+						} ]
+					});
+				});
+			});
+			
+		
+		});
+		// 默认初始化万位走势图
+		function initData(){
+			$.post("http://localhost:8080/findSSCList",{"table_name":"ssc_wan"}, function(data) {
+				myChart.setOption({
+					xAxis : {
+						data : data.timeList
+					},
+					series : [ {
+						// 根据名字对应到相应的系列
+						name : '万位1-23期',
+						data : data.value23List
+					},{
+						// 根据名字对应到相应的系列
+						name : '万位24-120期',
+						data : []
+					} ]
+				});
+			});
+		}
+	</script>
+</body>
+</html>
